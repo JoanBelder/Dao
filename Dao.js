@@ -1,9 +1,12 @@
 (function (global) {
 	"use strict";
 	
-	// Private functions
+	// Allows warnings for debugging
 	var warn = (global.console && global.console.warn) ?
 		global.console.warn : function(){};
+		
+	// reference to original Dao object. used for util.noConflict
+	var originalDao = global.Dao;
 
 	/**
 	 * Constructs an Dao element
@@ -115,6 +118,19 @@
 				});
 			}
 		}
+	};
+
+	/**
+	 * Dao.util.noConflict
+	 * This will prevent namespace conflicts
+	 * it will restore the original Dao back to the global
+	 * object and return the Dao object
+	 */
+	Dao.util.noConflict = function() {
+	
+		global.Dao = originalDaol;
+		return Dao;
+	
 	};
 
 	// And build the Dao prototype
@@ -315,5 +331,4 @@
 	
 	// And expose
 	global.Dao = Dao;
-
 })(window);
