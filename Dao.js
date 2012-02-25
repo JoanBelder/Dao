@@ -249,6 +249,14 @@
 			this.push(attr);
 		};
 		
+		var parseComment = function parseComment(owner, comment) {
+			if (comment.indexOf("dao-func ") === 0) {
+				owner.push(
+					new Function("data", decodeURI(comment.substr("dao-func ".length)))
+				);
+			}
+		};
+		
 		// Build children
 		for (var i = 0; i < domElement.childNodes.length; i++) {
 			switch (domElement.childNodes[i].nodeType) {
@@ -256,6 +264,8 @@
 					this.push( new Dao( domElement.childNodes[i] ) ); break;
 				case Node.TEXT_NODE: case Node.CDATA_SECTION_NODE:
 					this.push( domElement.childNodes[i].data ); break;
+				case Node.COMMENT_NODE:
+					parseComment( this, domElement.childNodes[i].data ); break;
 			}
 		}
 		
