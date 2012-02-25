@@ -133,11 +133,64 @@
 	
 	};
 
+	/**
+	 * Dao.util.delegate
+ 	 * Creates an delegated variant of the same function
+	**/		
+ 	(function () {
+		
+		var opts = [
+			"matchesSelector",
+			"mozMatchesSelector",
+			"webkitMatchesSelector",
+			"oMatchesSelector"
+		].filter(function(matches) {
+			return !!document.documentElement[matches];
+		});
+		
+		// check if it's supported
+		if (opts.length) {
+			var matchesSelector = opts[0];
+		
+			Dao.util.delegate = function(selector, fn) {
+				return function(ev) {
+					if (ev.target[matchesSelector](selector)) {
+						fn.call(ev.target, ev);
+					}
+				}
+			};
+		}
+		// Not supported
+	
+	})();
+
+
 	// And build the Dao prototype
 	// This is an extension to the array prototype
 	// in order to comply with jsonml
 	Dao.prototype = Object.create(Array.prototype);
 
+
+	/**
+ 	 * dao.normalize
+	 * Normalizes a Dao object.
+	**/
+	Dao.util.extend(Dao.prototype, "normalize", function normalize() {
+		
+		// First of all create a reference to the attributes object
+		if (this.length < 2) {
+			if (this.length === 0) {
+				this.push(false);
+			}
+			if (this.length === 1) {
+				this.push({});
+			}
+		};
+		
+		if (Object.getPrototypeOf(Object(this[1])) !== Object.prototype) {
+			this.splice(1, 0, {});
+		}	
+	});
 
 	/**
 	 * dao.tagname
@@ -147,12 +200,12 @@
 	**/
 	Dao.util.extend(Dao.prototype, "tagname", function tagname(tagname) {
 		
+		this.normalize();
 		if (tagname) {
-			(this.length) ? this[0] = tagname : this.push(tagname);
+			this[0] = tagname;
 		}
 		
-		// And return
-		return (this.length) ? this[0] : false;
+		return this[0];
 	});
 	
 	
@@ -167,20 +220,7 @@
 	Dao.util.extend(Dao.prototype, "attr", function attr(attributes, value) {
 		
 		attributes = Dao.util.normattr(attributes, value);
-		
-		// First of all create a reference to the attributes object
-		if (this.length < 2) {
-			if (this.length === 0) {
-				this.push(false);
-			}
-			if (this.length === 1) {
-				this.push({});
-			}
-		};
-		if (Object.getPrototypeOf(Object(this[1])) !== Object.prototype) {
-			this.splice(1, 0, {});
-		}
-				
+		this.normalize();
 		
 		if (attributes) {
 			for (var key in attributes) {
@@ -285,30 +325,23 @@
 		data = data || {};
 		doc = doc || document;
 		
-		if (!this.length) {
-			return doc.createDocumentFragment();
-		}
+		this.normalize();
 		
-		var i = 1;
 		var element = (this[0]) ? doc.createElement(this[0]) : doc.createDocumentFragment();
 
-		// Atrributes (and not a DAO node)
-		if (Object.getPrototypeOf(Object(this[1])) === Object.prototype) {
-			i = 2; // starting position for child elements
-			
-			if (this[0]) {
-				for (var key in this[1]) {
-					if (this[1].hasOwnProperty(key)) {
-						
-						if (this[1][key] instanceof Function) {
-							// Maybe it's an event listener
-							element.addEventListener(key, this[1][key], false);
-						}
-						else {
-							element.setAttribute(key, this[1][key]);
-						}
-						
+		// Only add attributes when it's actually an element
+		if (this[0]) {
+			for (var key in this[1]) {
+				if (this[1].hasOwnProperty(key)) {
+					
+					if (this[1][key] instanceof Function) {
+						// Maybe it's an event listener
+						element.addEventListener(key, this[1][key], false);
 					}
+					else {
+						element.setAttribute(key, this[1][key]);
+					}
+					
 				}
 			}
 		}
@@ -332,7 +365,7 @@
  		};
 
 
-		for (; i < this.length; i++) {
+		for (var i = 2; i < this.length; i++) {
 			element.appendChild( buildPart( this[i] ) );
 		}
 		
