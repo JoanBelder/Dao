@@ -128,7 +128,7 @@
 	 */
 	Dao.util.noConflict = function() {
 	
-		global.Dao = originalDaol;
+		global.Dao = originalDao;
 		return Dao;
 	
 	};
@@ -153,11 +153,13 @@
 			var matchesSelector = opts[0];
 		
 			Dao.util.delegate = function(selector, fn) {
-				return function(ev) {
+				var delegate = function(ev) {
 					if (ev.target[matchesSelector](selector)) {
 						fn.call(ev.target, ev);
 					}
-				}
+				};
+				delegate.useCapture = true;
+				return delegate;
 			};
 		}
 		// Not supported
@@ -225,6 +227,26 @@
 		if (attributes) {
 			for (var key in attributes) {
 				if (attributes.hasOwnProperty(key)) {
+					
+					// Just make some
+					if (!this[1][key] === undefined) {
+						this[1][key] = value;
+						continue;
+					}
+					
+					// Already an array, just add some
+					if (Array.isArray(this[1][key])) {
+						this[1][key].push(value);
+						continue;
+					}
+					
+					// It's an event handler, just make it an array
+					if (value instanceof Function) {
+						this[1][key] = [this[1][key], value];
+						continue;
+					}
+					
+					// Just a value, do overwrite
 					this[1][key] = value;
 				}
 			}
@@ -232,7 +254,21 @@
 		
 		return this[1];
 	});
-
+	
+	/**
+	 * dao.on
+	 * Adds an event listener to the object
+	 * @param {String} event the name of the event to set
+	 * @param (optional) {String} selector the selector for delegate events
+	 * @param {function(ev)} the function to fire on the event
+	**/
+	Dao.util.extend(Dao.prototype, "on", function on(event, selector, fn) {
+		if (arguments.length === 3) {
+			fn = Dao.util.delegate(selector, fn);
+		}
+		
+		this.attr(event, fn);
+	});
 
 	/**
 	 * dao.render
@@ -329,19 +365,25 @@
 		
 		var element = (this[0]) ? doc.createElement(this[0]) : doc.createDocumentFragment();
 
+		var handleProperty = function handleProperty(key, prop) {
+			if (Array.isArray(prop)) {
+				for (var i = 0; i < prop.length; i++) {
+					handleProperty(key, prop[i]);
+				}
+			}
+			else if (prop instanceof Function) {
+				element.addEventListener(key, prop, prop.useCapture || false);
+			}
+			else {
+				element.setAttribute(key, prop);
+			}
+		};
+
 		// Only add attributes when it's actually an element
 		if (this[0]) {
 			for (var key in this[1]) {
 				if (this[1].hasOwnProperty(key)) {
-					
-					if (this[1][key] instanceof Function) {
-						// Maybe it's an event listener
-						element.addEventListener(key, this[1][key], false);
-					}
-					else {
-						element.setAttribute(key, this[1][key]);
-					}
-					
+					handleProperty(key, this[1][key]);
 				}
 			}
 		}
