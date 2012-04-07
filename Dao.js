@@ -1,3 +1,12 @@
+/**
+ * Dao
+ * An JSOMML implementation
+ *
+ * @version 0.1
+ * @author Joan Belder
+ * @copyright 2012
+**/
+
 (function (global) {
 	"use strict";
 	
