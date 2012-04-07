@@ -7,8 +7,11 @@
  * @copyright 2012
 **/
 
-(function (global) {
+(function (global, $) {
 	"use strict";
+	
+	// Check if jQuery is enabled
+	var hasJQuery = !!($ && $.fn && $.fn.jquery);
 	
 	// Allows warnings for debugging
 	var warn = (global.console && global.console.warn) ?
@@ -55,15 +58,35 @@
 		}
 		
 		// It's a jsonml object.. yay!	
+		if (hasJQuery && data instanceof $) {
+			if (flags & Dao.FLAG_JQUERY_LIVE) {
+				// Push the actual jquery object if it's live
+				this.push(data);
+				return;
+			}
+			else {
+				// Mutate data into an real array
+				data = $.toArray();
+			}
+		}
+		
 		if (Array.isArray(data)) {
-			for (var i = 0; i < data.length; i++) {
-				if (Array.isArray(data[i])) {
-					this.push( new Dao( data[i] ) );
-				}
-				else {
+			
+			// Lazy daoize attempt if it's an element
+			if (data.length && data[0] && typeof data[0] === 'string') {
+				for (var i = 0; i < data.length; i++) {
 					this.push( data[i] );
 				}
 			}
+			// It's probably no element so do a greedy daoize attempt
+			else {
+				for (var i = 0; i < data.length; i++) {
+					this.push( new Dao(data[i], undefined, flags) );
+				}
+			}
+		}
+		else if (data instanceof Function) {
+			this.push(data);
 		}
 		else if (data) {
 			this.tagname(data.toString());
@@ -80,6 +103,7 @@
 	Dao.FLAG_NONE				= 0;
 	Dao.FLAG_STRIP_WHITESPACE	= 1;
 	Dao.FLAG_TRIM				= 2;
+	Dao.FLAG_JQUERY_LIVE		= 4;
 		
 	// Let's build some Dao Utilities
 	Dao.util = {};
@@ -168,6 +192,18 @@
 	**/		
  	(function () {
 		
+		// use JQuery if availabe...
+		if (hasJQuery) {
+			Dao.util.delegate = function(selector, fn) {
+				return function(ev) {
+					if ($(ev.target).is(selector)) {
+						fn.call(ev.target, ev);
+					}
+				};
+			};
+			return;
+		}
+		
 		var opts = [
 			"matchesSelector",
 			"mozMatchesSelector",
@@ -215,6 +251,12 @@
 	 * Normalizes a Dao object.
 	**/
 	Dao.util.extend(Dao.prototype, "normalize", function normalize() {
+		
+		// check if it is actually representing an element
+		if (!this.length || typeof this[0] !== "string") {
+			console.log(this);
+			this.unshift(false);
+		}
 		
 		// First of all create a reference to the attributes object
 		if (this.length < 2) {
@@ -446,11 +488,16 @@
 			if (Array.isArray(item)) {
 				return (new Dao(item)).build(data, doc);
 			}
-			
+					
 			// Functions are done recursive, so they can return
 			// dao element, strings, or event other functions =)
 			if (item instanceof Function) {
 				return buildPart( item(data, element, doc) );
+			}
+			// Allow jquery elements to appended if needed.
+			if (hasJQuery && item instanceof $) {
+				item.appendTo(element);
+				return;
 			}
 			
 			return doc.createTextNode(item);
@@ -458,7 +505,10 @@
 
 
 		for (var i = 2; i < this.length; i++) {
-			element.appendChild( buildPart( this[i] ) );
+			var toAppend = buildPart( this[i] );
+			if (toAppend) {
+				element.appendChild( toAppend );
+			}
 		}
 		
 		return element;
@@ -466,4 +516,4 @@
 	
 	// And expose
 	global.Dao = Dao;
-})(window);
+})(window, window.jQuery);
