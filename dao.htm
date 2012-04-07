@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<?pi ?>
+<title>Dao test</title>
+<div>
+	Test
+	<ul>
+		<li>First item</li>
+		<li>Second item</li>
+		<input />
+	</ul>
+</div>
+<script type="text/javascript" src="dao.js"></script>
+<script type="text/javascript">
+	
+	document.addEventListener("DOMContentLoaded", function() {
+	
+		var x = Dao(["div", {},
+			["a", {href : "x"}, function(data, parent) { console.log(parent); parent.href = data.url; return data.name; }],
+		]).build({name: "joan", url: "?view=joan"});
+		
+		console.log(x);
+		
+	});
+	
+	
+</script>

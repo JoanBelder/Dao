@@ -16,8 +16,9 @@
 	 *   if data is a String a dao element with as tagname the string is returned
 	 *   if data is a Element the Element structure is copied into a DAO element
 	 * @param (Element} node the node to attach the DAO element to
+	 * @param (int) flags
 	**/
-	var Dao = function Dao(data, node) {
+	var Dao = function Dao(data, node, flags) {
 		
 		// Allow construction without the new keyword
 		if (!(this instanceof Dao)) {
@@ -27,9 +28,14 @@
 		// Make sure it's at least set
 		this.attachedNode = undefined;
 		
+		// make node po
+		if (arguments.length == 2 && Object(node) instanceof Number) {
+			flags = node;
+		}
+		
 		// If it's a element, we should attach to it
 		if (data instanceof Element) {
-			this.createFromDOM(data);
+			this.createFromDOM(data, flags);
 			// Ready
 			return;
 		}
@@ -61,6 +67,11 @@
 		}
 	};
 
+	// Define some Flags
+	Dao.FLAG_NONE				= 0;
+	Dao.FLAG_STRIP_WHITESPACE	= 1;
+	Dao.FLAG_TRIM				= 2;
+		
 	// Let's build some Dao Utilities
 	Dao.util = {};
 
@@ -126,13 +137,22 @@
 	 * it will restore the original Dao back to the global
 	 * object and return the Dao object
 	 */
-	Dao.util.noConflict = function() {
+	Dao.util.noConflict = function noConflict() {
 	
 		global.Dao = originalDao;
 		return Dao;
 	
 	};
-
+	
+	/**
+	 * Dao.util.fromJSON
+	 * Creates a Dao unit from JSON
+	 * @param {String} jsonString the json string to create the Dao from
+	 */
+	Dao.util.fromJSON = function fromJSON(jsonString) {
+		return new Dao(JSON.parse(jsonString));
+	};
+	
 	/**
 	 * Dao.util.delegate
  	 * Creates an delegated variant of the same function
@@ -153,13 +173,11 @@
 			var matchesSelector = opts[0];
 		
 			Dao.util.delegate = function(selector, fn) {
-				var delegate = function(ev) {
+				return function(ev) {
 					if (ev.target[matchesSelector](selector)) {
 						fn.call(ev.target, ev);
 					}
 				};
-				delegate.useCapture = true;
-				return delegate;
 			};
 		}
 		// Not supported
@@ -172,6 +190,16 @@
 	// in order to comply with jsonml
 	Dao.prototype = Object.create(Array.prototype);
 
+	/**
+	 * dao.toJSON
+	 * returns the jsonml representation of the Dao object
+	 * @return the jsonml representention of the Dao object
+	**/
+	Dao.util.extend(Dao.prototype, "toJSON", function toJSON() {
+		return this.map(function(obj) {
+			return (obj instanceof Dao) ? obj.toJSON() : obj;
+		});
+	});
 
 	/**
  	 * dao.normalize
@@ -229,7 +257,7 @@
 				if (attributes.hasOwnProperty(key)) {
 					
 					// Just make some
-					if (!this[1][key] === undefined) {
+					if (this[1][key] === undefined) {
 						this[1][key] = value;
 						continue;
 					}
@@ -265,6 +293,11 @@
 	Dao.util.extend(Dao.prototype, "on", function on(event, selector, fn) {
 		if (arguments.length === 3) {
 			fn = Dao.util.delegate(selector, fn);
+			
+			// Non-bubbling events that are not tied to the document-object. Should use capture
+			if (event === "blur" || event === "focus") {
+				fn.useCapture = true;
+			}
 		}
 		
 		this.attr(event, fn);
@@ -307,10 +340,12 @@
 	 * dao.createFromDOM
 	 * @param {Element} domElement
  	**/
-	Dao.util.extend(Dao.prototype, "createFromDOM", function createFromDOM(domElement) {
+	Dao.util.extend(Dao.prototype, "createFromDOM", function createFromDOM(domElement, flags) {
 		if (!(domElement instanceof Element)) {
 			return;
 		}
+		
+		flags = flags || Dao.FLAG_NONE;
 		
 		// Insert tag name
 		this.push(domElement.nodeName.toLowerCase());
@@ -337,9 +372,15 @@
 		for (var i = 0; i < domElement.childNodes.length; i++) {
 			switch (domElement.childNodes[i].nodeType) {
 				case Node.ELEMENT_NODE:
-					this.push( new Dao( domElement.childNodes[i] ) ); break;
+					this.push( new Dao( domElement.childNodes[i], flags ) ); break;
 				case Node.TEXT_NODE: case Node.CDATA_SECTION_NODE:
-					this.push( domElement.childNodes[i].data ); break;
+					// Check if we should skip
+					var d = domElement.childNodes[i].data;
+					if ((flags & Dao.FLAG_STRIP_WHITESPACE) && !(/[^\t\n\r ]/.test(d))) {
+						break;
+					}
+						
+					this.push( (flags & Dao.FLAG_TRIM) ? d.trim() : d ); break;
 				case Node.COMMENT_NODE:
 					parseComment( this, domElement.childNodes[i].data ); break;
 			}
@@ -394,13 +435,13 @@
 				return item.build(data, doc);
 			}
 			if (Array.isArray(item)) {
-				return (new Dao(item)).build();
+				return (new Dao(item)).build(data, doc);
 			}
 			
 			// Functions are done recursive, so they can return
 			// dao element, strings, or event other functions =)
 			if (item instanceof Function) {
-				return buildPart( item(data, doc) );
+				return buildPart( item(data, element, doc) );
 			}
 			
 			return doc.createTextNode(item);
