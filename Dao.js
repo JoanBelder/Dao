@@ -40,10 +40,13 @@
 		// Make sure it's at least set
 		this.attachedNode = undefined;
 		
-		// make node po
-		if (arguments.length == 2 && Object(node) instanceof Number) {
+		// make node optional
+		if (arguments.length == 2 && !(node instanceof Node)) {
 			flags = node;
 		}
+		
+		// Normalize the flags
+		flags = new Dao.Flags(flags);
 		
 		// If it's a element, we should attach to it
 		if (data instanceof Element) {
@@ -59,7 +62,7 @@
 		
 		// It's a jsonml object.. yay!	
 		if (hasJQuery && data instanceof $) {
-			if (flags & Dao.FLAG_JQUERY_LIVE) {
+			if (flags.jQueryLive) {
 				// Push the actual jquery object if it's live
 				this.push(data);
 				return;
@@ -149,6 +152,17 @@
 		// Just don't do anything with improper arguments
 		attributes = Dao.util.normattr(attributes, value);
 		if (Object(target) !== target || !attributes) {
+			return;
+		}
+		
+		// Fallback for older browsers
+		if (!Object.defineProperty) {
+			warn("Dao might not be fully supported!");
+			for (var n in attributes) {
+				if (attributes.hasOwnProperty(n)) {
+					target[n] = attributes[n];
+				}
+			}
 			return;
 		}
 				
@@ -396,7 +410,7 @@
 			return;
 		}
 		
-		flags = flags || Dao.FLAG_NONE;
+		flags = new Dao.Flags(flags);
 		
 		// Insert tag name
 		this.push(domElement.nodeName.toLowerCase());
@@ -427,11 +441,11 @@
 				case Node.TEXT_NODE: case Node.CDATA_SECTION_NODE:
 					// Check if we should skip
 					var d = domElement.childNodes[i].data;
-					if ((flags & Dao.FLAG_STRIP_WHITESPACE) && !(/[^\t\n\r ]/.test(d))) {
+					if ((flags.stripWhitespace) && !(/[^\t\n\r ]/.test(d))) {
 						break;
 					}
 						
-					this.push( (flags & Dao.FLAG_TRIM) ? d.trim() : d ); break;
+					this.push( (flags.trim) ? d.trim() : d ); break;
 				case Node.COMMENT_NODE:
 					parseComment( this, domElement.childNodes[i].data ); break;
 			}
@@ -512,6 +526,77 @@
 		}
 		
 		return element;
+	});
+	
+	/**
+	 * Constructs an Dao-Flags element
+	 * @param (int|Flags|Object} flags the flags element to create the flags from
+	**/
+	Dao.Flags = function Flags(flags) {
+		// Allow construction without the new keyword
+		if (!(this instanceof Flags)) {
+			return new Flags(flags);		
+		};
+		
+		// Just return the same, if it was already an flags element
+		if (flags instanceof Flags) {
+			return flags;
+		}
+	 
+	 	this.none();
+	 	this.set(flags);
+	}
+	
+	/**
+	 * Dao.flags.none
+	 * Sets the flags to default settings
+	**/
+	Dao.util.extend(Dao.Flags.prototype, "none", function() {
+		this.stripWhitespace = false;
+		this.jQueryLive = false;
+		this.trim = false;
+	});
+	
+	/**
+	 * Dao.flags.set
+	 * Sets the flags to default settings
+	**/
+	Dao.util.extend(Dao.Flags.prototype, "set", function(flags) {
+				
+		// It's an object.. YES!
+		if (Object(flags) === flags) {
+			var props = ['stripWhitespace', 'trim', 'jQueryLive'];
+			for (var i = 0; i < props.length; i++) {
+				if (flags.hasOwnProperty(props[i])) {
+					this[props[i]] = flags[props[i]];
+				}
+			}
+			return;
+		}
+		
+		// Else treat it as a number.
+		this.stripWhitespace = !!(flags & Dao.FLAG_STRIP_WHITESPACE);
+		this.jQueryLive      = !!(flags & Dao.FLAG_JQUERY_LIVE);
+		this.trim            = !!(flags & Dao.FLAG_TRIM);
+	
+	});
+	
+	/**
+	 * Dao.flags.toValue
+	 * Returns the flag as a simple number
+	**/
+	Dao.util.extend(Dao.Flags.prototype, "valueOf", function(flags) {
+		var v = 0;
+		if (this.stripWhitespace) {
+			v += Dao.FLAG_STRIP_WHITESPACE;
+		}
+		if (this.trim) {
+			v += Dao.FLAG_TRIM;
+		}
+		if (this.jQueryLive) {
+			v += Dao.FLAG_JQUERY_LIVE;
+		}
+		return v;
 	});
 	
 	// And expose
