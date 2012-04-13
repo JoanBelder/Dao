@@ -2,12 +2,12 @@
  * Dao
  * An JSOMML implementation
  *
- * @version 0.1
- * @author Joan Belder
- * @copyright 2012
+ * Copyright (c) 2012 Joan Belder
+ * MIT Licensed (http://www.opensource.org/licenses/mit-license.php)
+ *
 **/
 
-(function (global, $) {
+(function buildDao(global, $) {
 	"use strict";
 	
 	// Check if jQuery is enabled
@@ -192,6 +192,23 @@
 	};
 	
 	/**
+	 * Dao.util.createObject
+	 * Creates an empty object with a given prototype
+	 * @param {Object|null|undefined} The prototype of the new empty object
+	 */
+ 	Dao.util.createObject(proto) = function createObject {
+ 		// Just use Object.create when it's available
+ 		if ('create' in Object) {
+ 			return Object.create(proto);
+ 		}
+ 		
+ 		// Otherwise achieve the prototype using an intermediate constructor
+ 		var Intermediate = function Intermediate();
+ 		Intermediate.prototype = proto;
+ 		return new Intermediate();
+ 	}
+	
+	/**
 	 * Dao.util.fromJSON
 	 * Creates a Dao unit from JSON
 	 * @param {String} jsonString the json string to create the Dao from
@@ -247,7 +264,7 @@
 	// And build the Dao prototype
 	// This is an extension to the array prototype
 	// in order to comply with jsonml
-	Dao.prototype = Object.create(Array.prototype);
+	Dao.prototype = Dao.util.createObject(Array.prototype);
 
 	/**
 	 * dao.toJSON
@@ -582,7 +599,7 @@
 	});
 	
 	/**
-	 * Dao.flags.toValue
+	 * Dao.flags.valueOf
 	 * Returns the flag as a simple number
 	**/
 	Dao.util.extend(Dao.Flags.prototype, "valueOf", function(flags) {
