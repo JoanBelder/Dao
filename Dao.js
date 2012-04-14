@@ -196,14 +196,14 @@
 	 * Creates an empty object with a given prototype
 	 * @param {Object|null|undefined} The prototype of the new empty object
 	 */
- 	Dao.util.createObject(proto) = function createObject {
+ 	Dao.util.createObject = function createObject(proto) {
  		// Just use Object.create when it's available
  		if ('create' in Object) {
  			return Object.create(proto);
  		}
  		
  		// Otherwise achieve the prototype using an intermediate constructor
- 		var Intermediate = function Intermediate();
+ 		var Intermediate = function Intermediate(){};
  		Intermediate.prototype = proto;
  		return new Intermediate();
  	}
