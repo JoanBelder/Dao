@@ -69,6 +69,32 @@ Dao has as prototype the array object, so one can modify the Dao by the default 
 	dao.build();
 ```
 
+Further there are some methods on the Dao object to make editing the Dao 
+object a little easier.
+
+```js
+	// change the tagname
+	dao.tagname("a"); 
+	
+	// Add the following attributes
+	dao.attr({
+		"href" : "somelink",
+	 	"rel" : "external"
+ 	});
+ 	// Alternative setting of the attribute
+ 	dao.attr("class", "newClass"); 
+ 	
+ 	// Add an event handler
+	dao.on("click", function () {
+ 		console.log( "Hellow World!" );
+	});
+	
+	// Add an delegate event handler
+	dao.on("click", "a", function() {
+		console.log( "I clicked another a" );
+	});
+```	
+
 ## using Dao as template ##
 One of the more powerful functions is using Dao as a template.
 For example: 
@@ -99,14 +125,22 @@ Would produce the following HTML dom structure:
 	</ul>
 ```
 
+
+All functions in the Dao object get executed when build is called. The first argument 
+of the function will be equal to the first argument of build. The second argument will be
+the DOM node of the parent element of which the function is a member. The third one is the
+owner document. In case Dao isn't used on the normal document context.
+
 The function in the Dao array can return strings as text nodes. It can return
 new Dao objects ( thus even other functions ) , jQuery objects, or raw JSONML arrays.
+
 
 ## Construction flags ##
 Todo: document these
 
-## Browser suppoert ##
+## Browser support ##
 Dao is tested in:
+
 * Mozilla Firefox 8 and higher ( Should work from Firefox 3.6 )
 * Google Chrome
 
