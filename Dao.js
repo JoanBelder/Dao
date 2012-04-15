@@ -284,8 +284,7 @@
 	Dao.util.extend(Dao.prototype, "normalize", function normalize() {
 		
 		// check if it is actually representing an element
-		if (!this.length || typeof this[0] !== "string") {
-			console.log(this);
+		if (!this.length || (typeof this[0] !== "string" && this[0] !== false)) {
 			this.unshift(false);
 		}
 		
@@ -513,6 +512,10 @@
 		
 		// Helper function for building certain parts of the object
 		var buildPart = function buildPart(item) {
+			// Should we actually build at all?
+			if (!item) {
+				return;
+			}
 			if (item instanceof Dao) {
 				return item.build(data, doc);
 			}
@@ -521,7 +524,7 @@
 			}
 					
 			// Functions are done recursive, so they can return
-			// dao element, strings, or event other functions =)
+			// dao element, strings, or even other functions =)
 			if (item instanceof Function) {
 				return buildPart( item(data, element, doc) );
 			}
@@ -533,7 +536,6 @@
 			
 			return doc.createTextNode(item);
  		};
-
 
 		for (var i = 2; i < this.length; i++) {
 			var toAppend = buildPart( this[i] );
