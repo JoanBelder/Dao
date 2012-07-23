@@ -9,14 +9,14 @@
 
 (function buildDao(global, $) {
 	"use strict";
-	
+
 	// Check if jQuery is enabled
 	var hasJQuery = !!($ && $.fn && $.fn.jquery);
 	
 	// Allows warnings for debugging
 	var warn = (global.console && global.console.warn) ?
 		global.console.warn : function(){};
-		
+
 	// reference to original Dao object. used for util.noConflict
 	var originalDao = global.Dao;
 
@@ -35,31 +35,31 @@
 		// Allow construction without the new keyword
 		if (!(this instanceof Dao)) {
 			return new Dao(data, node);		
-		};
+		}
 		
 		// Make sure it's at least set
 		this.attachedNode = undefined;
-		
+
 		// make node optional
-		if (arguments.length == 2 && !(node instanceof Node)) {
+		if (arguments.length === 2 && !(node instanceof Node)) {
 			flags = node;
 		}
-		
+
 		// Normalize the flags
 		flags = new Dao.Flags(flags);
-		
+
 		// If it's a element, we should attach to it
 		if (data instanceof Element) {
 			this.createFromDOM(data, flags);
 			// Ready
 			return;
 		}
-		
+
 		// Cloning is not what we do...
 		if (data instanceof Dao) {
 			return data;
 		}
-		
+
 		// It's a jsonml object.. yay!	
 		if (hasJQuery && data instanceof $) {
 			if (flags.jQueryLive) {
@@ -72,7 +72,7 @@
 				data = $.toArray();
 			}
 		}
-		
+
 		if (Array.isArray(data)) {
 			
 			// Lazy daoize attempt if it's an element
@@ -117,8 +117,8 @@
 	 * Normalizes one or two arguments into a key pair list
 	 * will return false if nothing was passed
 	 * @param {Object|String} first key/pair object or a key value
- 	 * @param {String} second a value if the first was was a key value
- 	**/
+	 * @param {String} second a value if the first was was a key value
+	**/
 	Dao.util.normattr = function(first, second) {
 		// Passing nothing will result in nothing
 		if (!first) {
@@ -134,8 +134,8 @@
 		
 		// Otherwise it was an key pair list already
 		return first;
-	}
-	
+	};
+
 
 	/**
 	 * Dao.util.extend
@@ -144,11 +144,11 @@
 	 * @param {Object} target the object to be extended
 	 * @param {Object|String} attributes an properties object to add to target
 	 *   This can also be the name of an property to extend
- 	 * @param {String} When attributes is a string this is the value of the
- 	 *   property
- 	**/
+	 * @param {String} When attributes is a string this is the value of the
+	 *   property
+	**/
 	Dao.util.extend = function extend(target, attributes, value) {
-		
+
 		// Just don't do anything with improper arguments
 		attributes = Dao.util.normattr(attributes, value);
 		if (Object(target) !== target || !attributes) {
@@ -165,7 +165,7 @@
 			}
 			return;
 		}
-				
+		
 		for (var n in attributes) {
 			if (attributes.hasOwnProperty(n)) {
 				Object.defineProperty(target, n, {
@@ -183,31 +183,31 @@
 	 * This will prevent namespace conflicts
 	 * it will restore the original Dao back to the global
 	 * object and return the Dao object
-	 */
+	**/
 	Dao.util.noConflict = function noConflict() {
 	
 		global.Dao = originalDao;
 		return Dao;
 	
 	};
-	
+
 	/**
 	 * Dao.util.createObject
 	 * Creates an empty object with a given prototype
 	 * @param {Object|null|undefined} The prototype of the new empty object
-	 */
- 	Dao.util.createObject = function createObject(proto) {
- 		// Just use Object.create when it's available
- 		if ('create' in Object) {
- 			return Object.create(proto);
- 		}
- 		
- 		// Otherwise achieve the prototype using an intermediate constructor
- 		var Intermediate = function Intermediate(){};
- 		Intermediate.prototype = proto;
- 		return new Intermediate();
- 	}
-	
+ 	**/
+	Dao.util.createObject = function createObject(proto) {
+		// Just use Object.create when it's available
+		if ('create' in Object) {
+			return Object.create(proto);
+		}
+		
+		// Otherwise achieve the prototype using an intermediate constructor
+		var Intermediate = function Intermediate(){};
+		Intermediate.prototype = proto;
+		return new Intermediate();
+	};
+
 	/**
 	 * Dao.util.fromJSON
 	 * Creates a Dao unit from JSON
@@ -216,12 +216,12 @@
 	Dao.util.fromJSON = function fromJSON(jsonString) {
 		return new Dao(JSON.parse(jsonString));
 	};
-	
+
 	/**
 	 * Dao.util.delegate
- 	 * Creates an delegated variant of the same function
+	 * Creates an delegated variant of the same function
 	**/		
- 	(function () {
+	(function () {
 		
 		// use JQuery if availabe...
 		if (hasJQuery) {
@@ -234,7 +234,7 @@
 			};
 			return;
 		}
-		
+
 		var opts = [
 			"matchesSelector",
 			"mozMatchesSelector",
@@ -259,13 +259,13 @@
 		// Not supported
 	
 	})();
-	
+
 	/**
 	 * Dao.util.isArray
 	 * Checks whether the input is an array or not.
 	 * @param {any} test the variable to test
 	 * @return true if test is an array otherwise false
- 	**/
+	**/
 	Dao.util.isArray = function(test) {
 		if (Array.isArray) {
 			return Array.isArray(test);
@@ -276,8 +276,8 @@
 	/**
 	 * Dao.util.get
 	 * An convenient accessor function.
- 	 * @param {string|array} path the path to the object to get
- 	 * @return the data accessor function.
+	 * @param {string|array} path the path to the object to get
+	 * @return the data accessor function.
 	**/
 	Dao.util.get = function(path) {
 		if (!path || !path.length) {
@@ -298,15 +298,21 @@
 			return data;
 		};
 	};
-	
+
 	/**
 	 * Dao.util.map
 	 * An convenient loop function.
- 	 * @param {string|array} path the path to the object to loop
- 	 * @param {Array|Dao|Element|String} build the dao-like object to apply to each member 
- 	 * @return the mapped data
+	 * @param {string|array} path the path to the object to loop
+	 * @param {Array|Dao|Element|String} build the dao-like object to apply to each member 
+	 * @return the mapped data
 	**/
 	Dao.util.map = function(path, build) {
+		// Make path optional
+		if (arguments.length === 1) {
+			build = path;
+			path = false;
+		}
+		
 		return function (data) {
 			var toMap = Dao.util.get(path)(data);
 			var result = [];
@@ -337,7 +343,7 @@
 	});
 
 	/**
- 	 * dao.normalize
+	 * dao.normalize
 	 * Normalizes a Dao object.
 	**/
 	Dao.util.extend(Dao.prototype, "normalize", function normalize() {
@@ -448,7 +454,7 @@
 	 * Refreshes the DOM node to which the Dao object 
 	 * is attached.
 	 * @param {Object} data the data to render if it's a template dao object
- 	**/
+	**/
 	Dao.util.extend(Dao.prototype, "render", function render(data) {
 		if (!this.attachedNode) {
 			warn("Dao object had no attached node");
@@ -460,7 +466,7 @@
 		this.attachedNode = this.attachedNode.parentNode
 			.replaceChild(this.build(data, this.attachedNode.ownerDocument), this.attachedNode);
 	});
-	
+
 	/**
 	 * dao.appendTo
 	 * appends the Dao element to another Node
@@ -484,27 +490,27 @@
 	/**
 	 * dao.createFromDOM
 	 * @param {Element} domElement
- 	**/
+	**/
 	Dao.util.extend(Dao.prototype, "createFromDOM", function createFromDOM(domElement, flags) {
 		if (!(domElement instanceof Element)) {
 			return;
 		}
-		
+
 		flags = new Dao.Flags(flags);
-		
+
 		// Insert tag name
 		this.push(domElement.nodeName.toLowerCase());
-		
+
 		// Insert attributes (if any)
 		if (domElement.hasAttributes()) {
 			var attr = {};
 			for (var i = 0; i < domElement.attributes.length; i++) {
 				attr[ domElement.attributes[i].name ] = domElement.attributes[i].value;
 			}
-			
+
 			this.push(attr);
 		};
-		
+
 		var parseComment = function parseComment(owner, comment) {
 			if (comment.indexOf("dao-func ") === 0) {
 				owner.push(
@@ -512,7 +518,7 @@
 				);
 			}
 		};
-		
+
 		// Build children
 		for (var i = 0; i < domElement.childNodes.length; i++) {
 			switch (domElement.childNodes[i].nodeType) {
@@ -530,7 +536,7 @@
 					parseComment( this, domElement.childNodes[i].data ); break;
 			}
 		}
-		
+
 		// And attach the attached node
 		this.attachedNode = domElement;
 	});
@@ -541,7 +547,7 @@
 	 * Builds the dao object into a dom node
 	 * @param {Object} data the data to render if it's a template dao object
 	 * @param (optional) {DOMDocument} doc the ownerdocument of the built dao object
- 	**/
+	**/
 	Dao.util.extend(Dao.prototype, "build", function build(data, doc) {
 		
 		data = data || {};
@@ -599,7 +605,7 @@
 			}
 			
 			return doc.createTextNode(item);
- 		};
+		};
 
 		for (var i = 2; i < this.length; i++) {
 			var toAppend = buildPart( this[i] );
@@ -618,16 +624,16 @@
 	Dao.Flags = function Flags(flags) {
 		// Allow construction without the new keyword
 		if (!(this instanceof Flags)) {
-			return new Flags(flags);		
+			return new Flags(flags);
 		};
 		
 		// Just return the same, if it was already an flags element
 		if (flags instanceof Flags) {
 			return flags;
 		}
-	 
-	 	this.none();
-	 	this.set(flags);
+
+		this.none();
+		this.set(flags);
 	}
 	
 	/**
@@ -639,13 +645,13 @@
 		this.jQueryLive = false;
 		this.trim = false;
 	});
-	
+
 	/**
 	 * Dao.flags.set
 	 * Sets the flags to default settings
 	**/
 	Dao.util.extend(Dao.Flags.prototype, "set", function(flags) {
-				
+		
 		// It's an object.. YES!
 		if (Object(flags) === flags) {
 			var props = ['stripWhitespace', 'trim', 'jQueryLive'];
@@ -656,14 +662,14 @@
 			}
 			return;
 		}
-		
+
 		// Else treat it as a number.
 		this.stripWhitespace = !!(flags & Dao.FLAG_STRIP_WHITESPACE);
 		this.jQueryLive      = !!(flags & Dao.FLAG_JQUERY_LIVE);
 		this.trim            = !!(flags & Dao.FLAG_TRIM);
 	
 	});
-	
+
 	/**
 	 * Dao.flags.valueOf
 	 * Returns the flag as a simple number
@@ -681,11 +687,11 @@
 		}
 		return v;
 	});
-	
+
 	// Quick access
 	Dao.get = Dao.util.get;
 	Dao.map = Dao.util.map;
-	
+
 	// And expose
 	global.Dao = Dao;
 })(window, window.jQuery);
