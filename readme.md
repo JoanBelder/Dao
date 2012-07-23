@@ -57,7 +57,7 @@ of elements it will return a DocumentFragment rather than an Element.
 	document.body.appendChild(allLinks.build);
 ```
 
-## modifying a Dao object ##
+## Modifying a Dao object ##
 Dao has as prototype the array object, so one can modify the Dao by the default array operations.
 
 ```js
@@ -95,7 +95,7 @@ object a little easier.
 	});
 ```	
 
-## using Dao as template ##
+## Using Dao as template ##
 One of the more powerful functions is using Dao as a template.
 For example: 
 
@@ -125,7 +125,6 @@ Would produce the following HTML dom structure:
 	</ul>
 ```
 
-
 All functions in the Dao object get executed when build is called. The first argument 
 of the function will be equal to the first argument of build. The second argument will be
 the DOM node of the parent element of which the function is a member. The third one is the
@@ -134,6 +133,35 @@ owner document. In case Dao isn't used on the normal document context.
 The function in the Dao array can return strings as text nodes. It can return
 new Dao objects ( thus even other functions ) , jQuery objects, or raw JSONML arrays.
 
+### Shortcut methods ###
+For convenience Dao has shortcut methods to make templating code les verbose. The previous example
+could for example have been written the following way;
+
+```js
+	var tpl = new Dao(["ul",
+		Dao.map('', ["li", Dao.get('')])
+	]);
+	tpl.build([
+		"first list item",
+		"second list item"
+	]);
+```
+
+The `Dao.get` method returns an data accessor function. Allowing object members being split by a dot `.`.
+```js
+	var tpl = new Dao(['span', Dao.get("example.content")]);
+	tpl.build({
+		example: {
+			content: "blah blah blah",
+		}
+	});
+	// Would produce <span>blah blah blah</span>
+```
+If the member is not found. It returns `false` instead, without any warning. If the first argument
+is missing or empty, it returns the data object.
+
+The `Dao.map` method returns a looping function. The first argument is the path to loop. The second argument
+is the Dao object that is the template to be applied to each member.
 
 ## Construction flags ##
 Todo: document these
@@ -144,5 +172,5 @@ Dao is tested in:
 * Mozilla Firefox 8 and higher ( Should work from Firefox 3.6 )
 * Google Chrome
 
-# license #
+# License #
 Dao is MIT Licensed
