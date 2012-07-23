@@ -259,7 +259,66 @@
 		// Not supported
 	
 	})();
+	
+	/**
+	 * Dao.util.isArray
+	 * Checks whether the input is an array or not.
+	 * @param {any} test the variable to test
+	 * @return true if test is an array otherwise false
+ 	**/
+	Dao.util.isArray = function(test) {
+		if (Array.isArray) {
+			return Array.isArray(test);
+		}
+		return Object.prototype.toString.call(test) === "[object Array]";	
+	};
 
+	/**
+	 * Dao.util.get
+	 * An convenient accessor function.
+ 	 * @param {string|array} path the path to the object to get
+ 	 * @return the data accessor function.
+	**/
+	Dao.util.get = function(path) {
+		if (!path || !path.length) {
+			return function daoGet(data) {
+				return data;
+			};
+		}
+		if (!Dao.util.isArray(path)) {
+			path = (path + "").split(".");
+		}
+		return function daoGet(data) {
+			for (var i = 0; i < path.length; i++) {
+				if (!data[path[i]]) {
+					return false;
+				}
+				data = data[path[i]];
+			}
+			return data;
+		};
+	};
+	
+	/**
+	 * Dao.util.map
+	 * An convenient loop function.
+ 	 * @param {string|array} path the path to the object to loop
+ 	 * @param {Array|Dao|Element|String} build the dao-like object to apply to each member 
+ 	 * @return the mapped data
+	**/
+	Dao.util.map = function(path, build) {
+		return function (data) {
+			var toMap = Dao.util.get(path)(data);
+			var result = [];
+			if (!Dao.util.isArray(toMap)) {
+				return result;
+			}
+			for (var i = 0; i < toMap.length; i++) {
+				result[i] = (new Dao(build)).build(toMap[i]);	
+			}
+			return result;
+		};
+	};
 
 	// And build the Dao prototype
 	// This is an extension to the array prototype
@@ -409,6 +468,11 @@
 	 * @param {Object} data the data to render if it's a template dao object
 	**/
 	Dao.util.extend(Dao.prototype, "appendTo", function(node, data) {
+		if (hasJQuery && node instanceof jQuery) {
+			node.append( this.build(data) );
+			return;
+		}
+		
 		if (!(node instanceof Element)) {
 			warn("Can't connect to node");
 		}
@@ -617,6 +681,10 @@
 		}
 		return v;
 	});
+	
+	// Quick access
+	Dao.get = Dao.util.get;
+	Dao.map = Dao.util.map;
 	
 	// And expose
 	global.Dao = Dao;
