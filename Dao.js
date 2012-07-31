@@ -281,14 +281,16 @@
 	**/
 	Dao.util.get = function(path) {
 		if (!path || !path.length) {
-			return function daoGet(data) {
+			var r = function daoGet(data) {
 				return data;
 			};
+			r.isDaoGet = true;
+			return r;
 		}
 		if (!Dao.util.isArray(path)) {
 			path = (path + "").split(".");
 		}
-		return function daoGet(data) {
+		var r = function daoGet(data) {
 			for (var i = 0; i < path.length; i++) {
 				if (!data[path[i]]) {
 					return false;
@@ -297,6 +299,8 @@
 			}
 			return data;
 		};
+		r.isDaoGet = true;
+		return r;
 	};
 
 	/**
@@ -564,7 +568,12 @@
 				}
 			}
 			else if (prop instanceof Function) {
-				element.addEventListener(key, prop, prop.useCapture || false);
+				if (!prop.isDaoGet) {
+					element.addEventListener(key, prop, prop.useCapture || false);
+				}
+				else {
+					handleProperty(key, prop(data, element, doc));
+				}
 			}
 			else {
 				element.setAttribute(key, prop);
