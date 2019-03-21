@@ -48,7 +48,7 @@ To go to a JSON string it's possible to simply use JSON.stringify
 To get a DOM node out of the Dao object call the `build` method. If the Dao represented an array 
 of elements it will return a DocumentFragment rather than an Element.
 
-````js
+```js
 	var dao = new Dao([ "a", {"href":"http://example.com"}, "a link" ]);
 	document.body.appendChild(dao.build());
 	
